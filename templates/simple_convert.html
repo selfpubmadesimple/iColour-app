@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Convert to Coloring Page{% endblock %}
+
+{% block content %}
+<style>
+.apple-container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 60px 20px;
+}
+
+.apple-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: #1d1d1f;
+    text-align: center;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+}
+
+.apple-subtitle {
+    font-size: 19px;
+    color: #86868b;
+    text-align: center;
+    margin-bottom: 48px;
+    font-weight: 400;
+    line-height: 1.4;
+}
+
+.upload-area {
+    border: 2px dashed #d1d1d6;
+    border-radius: 12px;
+    padding: 48px 24px;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: #fbfbfd;
+    margin-bottom: 24px;
+}
+
+.upload-area:hover {
+    border-color: #007aff;
+    background: #f5f5f7;
+}
+
+.upload-area.dragover {
+    border-color: #007aff;
+    background: #e8f2ff;
+}
+
+.upload-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 16px;
+    opacity: 0.6;
+}
+
+.upload-text {
+    font-size: 17px;
+    color: #1d1d1f;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.upload-hint {
+    font-size: 13px;
+    color: #86868b;
+}
+
+.file-input {
+    display: none;
+}
+
+.convert-button {
+    background: #007aff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 17px;
+    font-weight: 500;
+    width: 100%;
+    transition: all 0.2s ease;
+    display: none;
+}
+
+.convert-button:hover {
+    background: #0051d6;
+    transform: translateY(-1px);
+}
+
+.selected-file {
+    background: #f5f5f7;
+    border: 1px solid #d1d1d6;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 24px;
+    display: none;
+}
+
+.file-name {
+    font-size: 15px;
+    color: #1d1d1f;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.file-size {
+    font-size: 13px;
+    color: #86868b;
+}
+</style>
+
+<div class="apple-container">
+    <h1 class="apple-title">Create a Coloring Page</h1>
+    <p class="apple-subtitle">Upload an image and we'll convert it to a beautiful line drawing ready for coloring.</p>
+    
+    <form method="POST" enctype="multipart/form-data" id="uploadForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        
+        <div class="upload-area" id="uploadArea">
+            <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+            <div class="upload-text">Choose an image</div>
+            <div class="upload-hint">PNG or JPG up to 10MB</div>
+        </div>
+        
+        <input type="file" 
+               class="file-input" 
+               id="image_file" 
+               name="image_file" 
+               accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+               required>
+        
+        <div class="selected-file" id="selectedFile">
+            <div class="file-name" id="fileName"></div>
+            <div class="file-size" id="fileSize"></div>
+        </div>
+        
+        <button type="submit" class="convert-button" id="convertButton">
+            Convert to Coloring Page
+        </button>
+    </form>
+</div>
+
+<script>
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('image_file');
+const selectedFile = document.getElementById('selectedFile');
+const convertButton = document.getElementById('convertButton');
+const fileName = document.getElementById('fileName');
+const fileSize = document.getElementById('fileSize');
+
+// Click to upload
+uploadArea.addEventListener('click', () => fileInput.click());
+
+// File selection
+fileInput.addEventListener('change', handleFileSelect);
+
+// Drag and drop
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('dragover');
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        fileInput.files = files;
+        handleFileSelect();
+    }
+});
+
+function handleFileSelect() {
+    const file = fileInput.files[0];
+    if (file) {
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        selectedFile.style.display = 'block';
+        convertButton.style.display = 'block';
+        uploadArea.style.display = 'none';
+    }
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+</script>
+{% endblock %}

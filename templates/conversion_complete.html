@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Conversion Complete - iColour{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">
+                    <i data-feather="check-circle" class="me-2"></i>
+                    Conversion Complete!
+                </h4>
+            </div>
+            <div class="card-body text-center">
+                <div class="alert alert-success">
+                    <h5><i data-feather="download" class="me-2"></i>Your coloring book is ready!</h5>
+                    <p class="mb-0">Successfully converted {{ total_pages }} page{{ 's' if total_pages != 1 else '' }} in {{ "%.1f"|format(processing_time) }} seconds</p>
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="text-muted">Download Options</h6>
+                    <a href="{{ url_for('converter.download_file', session_id=session_id, filename=zip_filename) }}" 
+                       class="btn btn-primary btn-lg">
+                        <i data-feather="download" class="me-2"></i>
+                        Download ZIP File
+                    </a>
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="text-muted">What's Included:</h6>
+                    <ul class="list-unstyled">
+                        <li><i data-feather="file" class="me-2 text-primary"></i>{{ total_pages }} PNG coloring page{{ 's' if total_pages != 1 else '' }}</li>
+                        <li><i data-feather="printer" class="me-2 text-primary"></i>High-quality line art ready for printing</li>
+                        <li><i data-feather="image" class="me-2 text-primary"></i>White backgrounds with black lines</li>
+                    </ul>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <a href="{{ url_for('converter.convert') }}" class="btn btn-outline-primary">
+                            <i data-feather="upload" class="me-2"></i>
+                            Convert Another File
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="{{ url_for('converter.dashboard') }}" class="btn btn-outline-secondary">
+                            <i data-feather="home" class="me-2"></i>
+                            Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i data-feather="info" class="me-2"></i>
+                    Tips for Best Results
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>Print on standard 8.5" x 11" paper for best quality</li>
+                    <li>Use "Actual Size" or "100%" when printing to maintain proportions</li>
+                    <li>Works great with crayons, colored pencils, or markers</li>
+                    <li>Files are automatically cleaned up after 24 hours</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

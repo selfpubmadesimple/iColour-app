@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Image Preview - iColour{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i data-feather="eye" class="me-2"></i>
+                        Preview & Adjust ({{ current_index + 1 }} of {{ total_images }})
+                    </h4>
+                    <div class="progress" style="width: 200px;">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ ((current_index + 1) / total_images * 100)|round }}%">
+                            {{ current_index + 1 }}/{{ total_images }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <h6 class="text-center mb-4">{{ filename }}</h6>
+                
+                <!-- Image Comparison -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="text-center">
+                            <h6 class="text-muted">Original Image</h6>
+                            <div class="border rounded p-2 bg-light">
+                                <img src="{{ url_for('converter.serve_preview_image', image_path=original_image) }}" 
+                                     class="img-fluid" alt="Original" style="max-height: 300px;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-center">
+                            <h6 class="text-muted">Coloring Page</h6>
+                            <div class="border rounded p-2 bg-light">
+                                <img src="{{ url_for('converter.serve_preview_image', image_path=converted_image) }}" 
+                                     class="img-fluid" alt="Converted" style="max-height: 300px;" id="convertedPreview">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Adjustment Controls -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i data-feather="sliders" class="me-2"></i>
+                            Adjustment Controls
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="lineThickness" class="form-label">Line Thickness</label>
+                                <select class="form-select" id="lineThickness" onchange="adjustImage()">
+                                    <option value="thin">Thin Lines</option>
+                                    <option value="medium" selected>Medium Lines</option>
+                                    <option value="thick">Thick Lines</option>
+                                    <option value="very-thick">Very Thick Lines</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="contrast" class="form-label">Contrast Level</label>
+                                <select class="form-select" id="contrast" onchange="adjustImage()">
+                                    <option value="low">Low Contrast</option>
+                                    <option value="medium" selected>Medium Contrast</option>
+                                    <option value="high">High Contrast</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="text-center">
+                    <div class="btn-group mb-3">
+                        <button type="button" class="btn btn-success" onclick="approveImage()">
+                            <i data-feather="check" class="me-2"></i>
+                            Approve & Continue
+                        </button>
+                        <button type="button" class="btn btn-warning" onclick="regenerateImage()">
+                            <i data-feather="refresh-cw" class="me-2"></i>
+                            Regenerate
+                        </button>
+                    </div>
+                    
+                    <div>
+                        {% if current_index > 0 %}
+                        <button type="button" class="btn btn-outline-secondary me-2" onclick="previousImage()">
+                            <i data-feather="arrow-left" class="me-2"></i>
+                            Previous
+                        </button>
+                        {% endif %}
+                        
+                        <button type="button" class="btn btn-outline-danger" onclick="skipImage()">
+                            <i data-feather="skip-forward" class="me-2"></i>
+                            Skip This Image
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden form for session data -->
+<form id="previewForm" method="POST" style="display: none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <input type="hidden" name="session_data" value="{{ session_data }}" id="sessionData">
+    <input type="hidden" name="action" id="actionField">
+    <input type="hidden" name="current_index" value="{{ current_index }}" id="currentIndex">
+    <input type="hidden" name="adjustments" id="adjustmentsField">
+</form>
+
+<script>
+function approveImage() {
+    document.getElementById('actionField').value = 'approve';
+    document.getElementById('adjustmentsField').value = JSON.stringify({
+        lineThickness: document.getElementById('lineThickness').value,
+        contrast: document.getElementById('contrast').value
+    });
+    document.getElementById('previewForm').action = '{{ url_for("converter.handle_preview_action") }}';
+    document.getElementById('previewForm').submit();
+}
+
+function regenerateImage() {
+    document.getElementById('actionField').value = 'regenerate';
+    document.getElementById('adjustmentsField').value = JSON.stringify({
+        lineThickness: document.getElementById('lineThickness').value,
+        contrast: document.getElementById('contrast').value
+    });
+    document.getElementById('previewForm').action = '{{ url_for("converter.handle_preview_action") }}';
+    document.getElementById('previewForm').submit();
+}
+
+function skipImage() {
+    document.getElementById('actionField').value = 'skip';
+    document.getElementById('previewForm').action = '{{ url_for("converter.handle_preview_action") }}';
+    document.getElementById('previewForm').submit();
+}
+
+function previousImage() {
+    document.getElementById('actionField').value = 'previous';
+    document.getElementById('previewForm').action = '{{ url_for("converter.handle_preview_action") }}';
+    document.getElementById('previewForm').submit();
+}
+
+function adjustImage() {
+    // Live preview adjustment could be added here
+    // For now, changes are applied when regenerating
+}
+
+// Initialize Feather icons
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+});
+</script>
+{% endblock %}

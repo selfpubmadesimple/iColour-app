@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome - iColour{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Hero Section -->
+        <div class="text-center mb-5">
+            <h1 class="display-4 mb-3">
+                <i data-feather="book-open" class="me-3"></i>
+                iColour
+            </h1>
+            <p class="lead">Transform your full-color PDF illustrations into beautiful line art perfect for coloring books using advanced AI technology.</p>
+        </div>
+
+        <!-- Features -->
+        <div class="row mb-5">
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i data-feather="upload" class="text-primary mb-3" style="width: 48px; height: 48px;"></i>
+                        <h5 class="card-title">Easy Upload</h5>
+                        <p class="card-text">Simply upload your PDF with full-color illustrations and let our AI do the work.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i data-feather="cpu" class="text-primary mb-3" style="width: 48px; height: 48px;"></i>
+                        <h5 class="card-title">AI-Powered</h5>
+                        <p class="card-text">Advanced OpenAI technology converts each page to clean, printable line art.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i data-feather="download" class="text-primary mb-3" style="width: 48px; height: 48px;"></i>
+                        <h5 class="card-title">Multiple Formats</h5>
+                        <p class="card-text">Get both individual PNG files and a complete PDF ready for printing.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- How It Works -->
+        <div class="card mb-5">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i data-feather="help-circle" class="me-2"></i>
+                    How It Works
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 50px; height: 50px;">
+                            <span class="text-white fw-bold">1</span>
+                        </div>
+                        <h6>Upload PDF</h6>
+                        <p class="small">Upload your full-color PDF illustration</p>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 50px; height: 50px;">
+                            <span class="text-white fw-bold">2</span>
+                        </div>
+                        <h6>AI Processing</h6>
+                        <p class="small">Our AI converts each page to line art</p>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 50px; height: 50px;">
+                            <span class="text-white fw-bold">3</span>
+                        </div>
+                        <h6>Generate PDF</h6>
+                        <p class="small">Creates a printable coloring book</p>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 50px; height: 50px;">
+                            <span class="text-white fw-bold">4</span>
+                        </div>
+                        <h6>Download</h6>
+                        <p class="small">Get your ZIP with all files</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Call to Action -->
+        <div class="text-center">
+            {% if current_user.is_authenticated %}
+                <h3 class="mb-3">Ready to get started?</h3>
+                <a href="{{ url_for('converter.convert') }}" class="btn btn-primary btn-lg me-3">
+                    <i data-feather="upload" class="me-2"></i>
+                    Convert PDF Now
+                </a>
+                <a href="{{ url_for('converter.dashboard') }}" class="btn btn-outline-secondary btn-lg">
+                    <i data-feather="home" class="me-2"></i>
+                    View Dashboard
+                </a>
+            {% else %}
+                <h3 class="mb-3">Get started in seconds!</h3>
+                <p class="mb-4">Use your Replit account or create a new account to start converting your PDFs to coloring books.</p>
+                <a href="{{ url_for('replit_auth.login') }}" class="btn btn-primary btn-lg me-3">
+                    <i data-feather="user-plus" class="me-2"></i>
+                    Sign Up Free
+                </a>
+                <a href="{{ url_for_security('login') }}" class="btn btn-outline-secondary btn-lg">
+                    <i data-feather="log-in" class="me-2"></i>
+                    Sign In
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- Limitations Notice -->
+        <div class="alert alert-info mt-5">
+            <h6 class="alert-heading">
+                <i data-feather="info" class="me-2"></i>
+                Important Information
+            </h6>
+            <ul class="mb-0">
+                <li>Maximum file size: 50MB</li>
+                <li>Maximum pages per PDF: 20</li>
+                <li>Supported format: PDF only</li>
+                <li>Best results with clear, high-contrast illustrations</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

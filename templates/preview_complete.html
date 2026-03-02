@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Conversion Complete - iColour{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header text-center">
+                <h4 class="mb-0 text-success">
+                    <i data-feather="check-circle" class="me-2"></i>
+                    All Images Reviewed & Approved!
+                </h4>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <div class="display-1 text-success mb-3">
+                        <i data-feather="check-circle"></i>
+                    </div>
+                    <h5>Your coloring book is ready!</h5>
+                    <p class="text-muted">
+                        You've successfully reviewed and approved all {{ session_data.total_images }} images.
+                        Click below to create your final download.
+                    </p>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <button type="button" class="btn btn-primary btn-lg" onclick="finalizeConversion()">
+                        <i data-feather="download" class="me-2"></i>
+                        Create Final Download
+                    </button>
+                    <a href="{{ url_for('converter.convert') }}" class="btn btn-outline-secondary">
+                        <i data-feather="upload" class="me-2"></i>
+                        Convert More Images
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function finalizeConversion() {
+    const formData = new FormData();
+    formData.append('session_id', '{{ session_id }}');
+    formData.append('action', 'finalize');
+    formData.append('export_format', '{{ session_data.export_format }}');
+    
+    // Show loading
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating download...';
+    btn.disabled = true;
+    
+    fetch('/preview_conversion', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.headers.get('content-type')?.includes('application/')) {
+            return response.blob().then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'coloring_book.zip';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                // Redirect to dashboard after download
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 1000);
+            });
+        } else {
+            return response.text();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        alert('Error creating download. Please try again.');
+    });
+}
+
+feather.replace();
+</script>
+{% endblock %}

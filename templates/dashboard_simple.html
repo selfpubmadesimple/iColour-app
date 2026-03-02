@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - iColour{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-3">Welcome back, {{ current_user.email }}!</h1>
+            <p class="text-muted">Transform your PDF illustrations into beautiful coloring books using AI</p>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <i data-feather="file-text" class="text-primary me-3"></i>
+                        <div>
+                            <h5 class="mb-0">{{ total_conversions }}</h5>
+                            <small class="text-muted">Total Conversions</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <i data-feather="layers" class="text-success me-3"></i>
+                        <div>
+                            <h5 class="mb-0">{{ total_pages }}</h5>
+                            <small class="text-muted">Pages Converted</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <i data-feather="clock" class="text-info me-3"></i>
+                        <div>
+                            <h5 class="mb-0">{{ current_user.login_count }}</h5>
+                            <small class="text-muted">Total Logins</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Action -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i data-feather="upload" class="text-primary mb-3" style="width: 48px; height: 48px;"></i>
+                    <h4 class="card-title">iColour - PDF to Coloring Book</h4>
+                    <p class="card-text">Upload your full-color PDF illustrations and transform them into beautiful line art perfect for coloring.</p>
+                    <a href="{{ url_for('converter.convert') }}" class="btn btn-primary btn-lg">
+                        <i data-feather="upload" class="me-2"></i>Start Converting
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activities -->
+    {% if recent_activities %}
+    <div class="row">
+        <div class="col">
+            <h5 class="mb-3">Recent Conversions</h5>
+            <div class="card">
+                <div class="card-body">
+                    {% for activity in recent_activities %}
+                    <div class="d-flex justify-content-between align-items-center py-2{% if not loop.last %} border-bottom{% endif %}">
+                        <div>
+                            <strong>{{ activity.filename }}</strong>
+                            <br>
+                            <small class="text-muted">{{ activity.pages_converted }} pages • {{ activity.get_formatted_duration() }}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-{{ 'success' if activity.status == 'completed' else 'warning' }}">
+                                {{ activity.status.title() }}
+                            </span>
+                            <br>
+                            <small class="text-muted">{{ activity.created_at.strftime('%b %d, %Y') }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

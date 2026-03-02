@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}File Too Large - iColour{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0">
+                    <i data-feather="alert-triangle" class="me-2"></i>
+                    File Size Too Large
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <strong>Your PDF file is larger than our 100MB limit.</strong><br>
+                    Don't worry - we can help you reduce the file size!
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i data-feather="compress" class="me-2"></i>
+                                    Auto-Compress Your PDF
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">We can automatically compress your PDF to reduce file size while maintaining quality for coloring book conversion.</p>
+                                
+                                <form method="POST" action="{{ url_for('converter.compress_and_convert') }}" enctype="multipart/form-data" id="compressForm">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <div class="mb-3">
+                                        <label for="pdf_compress" class="form-label">Select PDF File</label>
+                                        <input type="file" class="form-control" id="pdf_compress" name="pdf_file" 
+                                               accept="application/pdf" required>
+                                        <div class="form-text">We'll compress files up to 200MB</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="compression_level" class="form-label">Compression Level</label>
+                                        <select class="form-select" id="compression_level" name="compression_level">
+                                            <option value="medium">Medium (Recommended)</option>
+                                            <option value="high">High (Smaller file, lower quality)</option>
+                                            <option value="low">Low (Larger file, better quality)</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-warning">
+                                        <i data-feather="compress" class="me-2"></i>
+                                        Compress & Convert
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i data-feather="tool" class="me-2"></i>
+                                    Manual Size Reduction
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">Reduce your PDF size before uploading:</p>
+                                
+                                <h6>Online PDF Compressors:</h6>
+                                <ul class="list-unstyled">
+                                    <li><a href="https://www.ilovepdf.com/compress_pdf" target="_blank" class="text-decoration-none">
+                                        <i data-feather="external-link" class="me-1"></i>iLovePDF Compress
+                                    </a></li>
+                                    <li><a href="https://smallpdf.com/compress-pdf" target="_blank" class="text-decoration-none">
+                                        <i data-feather="external-link" class="me-1"></i>SmallPDF Compress
+                                    </a></li>
+                                    <li><a href="https://www.pdf24.org/en/compress-pdf" target="_blank" class="text-decoration-none">
+                                        <i data-feather="external-link" class="me-1"></i>PDF24 Compress
+                                    </a></li>
+                                </ul>
+
+                                <h6 class="mt-3">Tips to Reduce File Size:</h6>
+                                <ul class="small text-muted">
+                                    <li>Remove unnecessary pages</li>
+                                    <li>Reduce image resolution to 150-300 DPI</li>
+                                    <li>Convert images to JPEG format</li>
+                                    <li>Remove embedded fonts if possible</li>
+                                </ul>
+
+                                <a href="{{ url_for('converter.convert') }}" class="btn btn-outline-secondary mt-2">
+                                    <i data-feather="arrow-left" class="me-2"></i>
+                                    Try Again
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info mt-4">
+                    <h6 class="alert-heading">
+                        <i data-feather="info" class="me-2"></i>
+                        Why do we have size limits?
+                    </h6>
+                    <p class="mb-0">Large files take longer to process and use more server resources. Our 100MB limit ensures fast, reliable conversion for all users. Most coloring book PDFs are under 50MB after optimization.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Compression Modal -->
+<div class="modal fade" id="compressionModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i data-feather="compress" class="me-2"></i>
+                    Compressing Your PDF
+                </h5>
+            </div>
+            <div class="modal-body text-center">
+                <div class="progress mb-3" style="height: 8px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" style="width: 0%" id="compressionProgressBar"></div>
+                </div>
+                
+                <h6 id="compressionStatusTitle">Analyzing your PDF...</h6>
+                <p class="text-muted mb-3" id="compressionStatusMessage">Preparing file for compression...</p>
+                
+                <div class="alert alert-info mt-3">
+                    <div class="d-flex align-items-center">
+                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                        <span id="compressionCurrentStep">Starting compression process...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Enhanced compression progress tracking
+document.getElementById('compressForm')?.addEventListener('submit', function(e) {
+    const fileInput = document.getElementById('pdf_compress');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        e.preventDefault();
+        alert('Please select a PDF file first.');
+        return;
+    }
+    
+    // Show compression modal
+    const modal = new bootstrap.Modal(document.getElementById('compressionModal'));
+    modal.show();
+    
+    // Start compression progress simulation
+    simulateCompressionProgress();
+});
+
+function simulateCompressionProgress() {
+    const progressBar = document.getElementById('compressionProgressBar');
+    const statusTitle = document.getElementById('compressionStatusTitle');
+    const statusMessage = document.getElementById('compressionStatusMessage');
+    const currentStep = document.getElementById('compressionCurrentStep');
+    
+    if (!progressBar) return;
+    
+    const steps = [
+        { percent: 20, title: "Analyzing PDF structure...", message: "Reading file metadata and content...", step: "Examining file composition..." },
+        { percent: 40, title: "Optimizing images...", message: "Reducing image sizes while preserving quality...", step: "Compressing embedded images..." },
+        { percent: 60, title: "Removing redundant data...", message: "Eliminating unnecessary elements...", step: "Cleaning up file structure..." },
+        { percent: 80, title: "Finalizing compression...", message: "Applying final optimizations...", step: "Completing compression process..." },
+        { percent: 95, title: "Starting conversion...", message: "Now processing compressed file for coloring book...", step: "Beginning line art conversion..." }
+    ];
+    
+    let currentStepIndex = 0;
+    
+    const updateProgress = () => {
+        if (currentStepIndex < steps.length) {
+            const step = steps[currentStepIndex];
+            
+            progressBar.style.width = step.percent + '%';
+            progressBar.setAttribute('aria-valuenow', step.percent);
+            
+            if (statusTitle) statusTitle.textContent = step.title;
+            if (statusMessage) statusMessage.textContent = step.message;
+            if (currentStep) currentStep.textContent = step.step;
+            
+            currentStepIndex++;
+            
+            const delay = 2000 + Math.random() * 2000;
+            setTimeout(updateProgress, delay);
+        }
+    };
+    
+    updateProgress();
+}
+</script>
+{% endblock %}

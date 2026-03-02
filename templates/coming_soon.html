@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body text-center p-5">
+                    <!-- Icon -->
+                    <div class="mb-4">
+                        <i data-feather="clock" class="text-warning" style="width: 64px; height: 64px;"></i>
+                    </div>
+                    
+                    <!-- Title -->
+                    <h1 class="display-6 fw-bold text-primary mb-3">{{ title }}</h1>
+                    
+                    <!-- Description -->
+                    <p class="lead text-muted mb-4">{{ description }}</p>
+                    
+                    <!-- Coming Soon Badge -->
+                    <div class="mb-4">
+                        <span class="badge bg-warning text-dark fs-6 px-3 py-2">
+                            <i data-feather="calendar" class="me-2" style="width: 16px; height: 16px;"></i>
+                            Coming Soon
+                        </span>
+                    </div>
+                    
+                    {% if features %}
+                    <!-- Features Preview -->
+                    <div class="row mt-5">
+                        <div class="col-12">
+                            <h5 class="text-secondary mb-3">What to Expect:</h5>
+                            <div class="row">
+                                {% for feature in features %}
+                                <div class="col-md-6 mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <i data-feather="check-circle" class="text-success me-2" style="width: 16px; height: 16px;"></i>
+                                        <span class="text-muted">{{ feature }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Notification Signup -->
+                    <div class="row mt-5">
+                        <div class="col-md-8 mx-auto">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="text-secondary mb-3">Get notified when this tool launches</h6>
+                                    <div class="input-group">
+                                        <input type="email" class="form-control" placeholder="Enter your email" disabled>
+                                        <button class="btn btn-primary" type="button" disabled>
+                                            <i data-feather="bell" class="me-1" style="width: 16px; height: 16px;"></i>
+                                            Notify Me
+                                        </button>
+                                    </div>
+                                    <small class="text-muted mt-2 d-block">Coming soon - notifications will be integrated</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Navigation -->
+                    <div class="mt-4">
+                        <a href="{{ url_for('dashboard.main_dashboard') }}" class="btn btn-outline-primary">
+                            <i data-feather="arrow-left" class="me-2" style="width: 16px; height: 16px;"></i>
+                            Back to Tools Library
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Development Note -->
+<div class="container mt-3">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="alert alert-info" role="alert">
+                <i data-feather="info" class="me-2" style="width: 16px; height: 16px;"></i>
+                <strong>Development Note:</strong> This is a placeholder page for the {{ title }} tool. 
+                The full implementation will be added following the pre-flight development process.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

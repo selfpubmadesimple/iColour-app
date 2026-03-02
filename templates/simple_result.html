@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Your Coloring Page{% endblock %}
+
+{% block content %}
+<style>
+.apple-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.success-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 24px;
+    color: #30d158;
+}
+
+.apple-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: #1d1d1f;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+}
+
+.apple-subtitle {
+    font-size: 19px;
+    color: #86868b;
+    margin-bottom: 48px;
+    font-weight: 400;
+    line-height: 1.4;
+}
+
+.image-preview {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    margin-bottom: 32px;
+    border: 1px solid #f0f0f0;
+}
+
+.coloring-image {
+    max-width: 100%;
+    max-height: 400px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.file-info {
+    background: #f5f5f7;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 32px;
+    font-size: 15px;
+    color: #86868b;
+}
+
+.button-group {
+    display: flex;
+    gap: 12px;
+    flex-direction: column;
+}
+
+@media (min-width: 600px) {
+    .button-group {
+        flex-direction: row;
+        justify-content: center;
+    }
+}
+
+.primary-button {
+    background: #007aff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 14px 28px;
+    font-size: 17px;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    min-width: 180px;
+}
+
+.primary-button:hover {
+    background: #0051d6;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.secondary-button {
+    background: transparent;
+    color: #007aff;
+    border: 1px solid #007aff;
+    border-radius: 8px;
+    padding: 14px 28px;
+    font-size: 17px;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    min-width: 180px;
+}
+
+.secondary-button:hover {
+    background: #007aff;
+    color: white;
+}
+
+.icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+}
+</style>
+
+<div class="apple-container">
+    <svg class="success-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+    </svg>
+    
+    <h1 class="apple-title">Ready to Color</h1>
+    <p class="apple-subtitle">Your coloring page has been created. Download it and start coloring!</p>
+    
+    <div class="image-preview">
+        <img src="{{ url_for('simple.download_simple', filename=output_filename) }}" 
+             alt="Converted coloring page" 
+             class="coloring-image">
+    </div>
+    
+    <div class="file-info">
+        From: {{ original_filename }}
+    </div>
+    
+    <div class="button-group">
+        <a href="{{ url_for('simple.download_simple', filename=output_filename) }}" 
+           class="primary-button">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            Download
+        </a>
+        
+        <a href="{{ url_for('simple.simple_upload') }}" 
+           class="secondary-button">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+            </svg>
+            Convert Another
+        </a>
+    </div>
+</div>
+{% endblock %}

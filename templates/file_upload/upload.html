@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}File Upload - iColour{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i data-feather="upload" class="me-2"></i>
+                        Upload PDF File
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Upload Status Messages -->
+                    <div id="upload-messages"></div>
+                    
+                    <!-- Drag and Drop Upload Area -->
+                    <div id="upload-dropzone" class="border border-2 border-dashed rounded p-5 text-center mb-4">
+                        <div id="upload-prompt">
+                            <i data-feather="upload-cloud" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                            <h5>Drag & Drop PDF File Here</h5>
+                            <p class="text-muted mb-3">or click to browse and select file</p>
+                            <button type="button" class="btn btn-outline-primary" id="browse-button">
+                                <i data-feather="folder" class="me-2"></i>
+                                Browse Files
+                            </button>
+                        </div>
+                        
+                        <!-- Upload Progress -->
+                        <div id="upload-progress" class="d-none">
+                            <div class="mb-3">
+                                <div class="progress">
+                                    <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <p class="mb-0">Uploading: <span id="upload-filename"></span></p>
+                        </div>
+                        
+                        <!-- Upload Success -->
+                        <div id="upload-success" class="d-none">
+                            <i data-feather="check-circle" class="text-success mb-3" style="width: 48px; height: 48px;"></i>
+                            <h5 class="text-success">Upload Successful!</h5>
+                            <p class="mb-3">File: <span id="success-filename"></span></p>
+                            <a href="{{ url_for('converter.convert') }}" class="btn btn-success">
+                                <i data-feather="play" class="me-2"></i>
+                                Convert to Coloring Book
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Hidden File Input -->
+                    <input type="file" id="file-input" accept=".pdf" class="d-none">
+                    
+                    <!-- CSRF Token for JavaScript uploads -->
+                    <input type="hidden" id="csrf-token" value="{{ csrf_token() }}">
+                    
+                    <!-- File Requirements -->
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i data-feather="info" class="me-2"></i>
+                            File Requirements
+                        </h6>
+                        <ul class="mb-0">
+                            <li>Only PDF files are accepted</li>
+                            <li>Maximum file size: 50MB</li>
+                            <li>Files with illustrations work best for coloring book conversion</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Uploads -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="clock" class="me-2"></i>
+                        Recent Uploads
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="recent-uploads">
+                        <p class="text-muted text-center">No recent uploads</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dropzone = document.getElementById('upload-dropzone');
+    const fileInput = document.getElementById('file-input');
+    const browseButton = document.getElementById('browse-button');
+    const uploadPrompt = document.getElementById('upload-prompt');
+    const uploadProgress = document.getElementById('upload-progress');
+    const uploadSuccess = document.getElementById('upload-success');
+    const progressBar = document.getElementById('progress-bar');
+    const uploadMessages = document.getElementById('upload-messages');
+    
+    // File input change handler
+    fileInput.addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            handleFileUpload(e.target.files[0]);
+        }
+    });
+    
+    // Browse button click handler
+    browseButton.addEventListener('click', function() {
+        fileInput.click();
+    });
+    
+    // Drag and drop handlers
+    dropzone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        dropzone.classList.add('border-primary');
+    });
+    
+    dropzone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        dropzone.classList.remove('border-primary');
+    });
+    
+    dropzone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dropzone.classList.remove('border-primary');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFileUpload(files[0]);
+        }
+    });
+    
+    // Click handler for dropzone
+    dropzone.addEventListener('click', function(e) {
+        if (e.target.id !== 'browse-button') {
+            fileInput.click();
+        }
+    });
+    
+    function handleFileUpload(file) {
+        // Validate file client-side
+        if (!file.name.toLowerCase().endsWith('.pdf')) {
+            showMessage('Please select a PDF file.', 'danger');
+            return;
+        }
+        
+        if (file.size > 50 * 1024 * 1024) {
+            showMessage('File size must be less than 50MB.', 'danger');
+            return;
+        }
+        
+        // Show upload progress
+        uploadPrompt.classList.add('d-none');
+        uploadSuccess.classList.add('d-none');
+        uploadProgress.classList.remove('d-none');
+        document.getElementById('upload-filename').textContent = file.name;
+        
+        // Create form data with CSRF token
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('csrf_token', document.getElementById('csrf-token').value);
+        
+        // Upload file
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.addEventListener('progress', function(e) {
+            if (e.lengthComputable) {
+                const percentComplete = (e.loaded / e.total) * 100;
+                progressBar.style.width = percentComplete + '%';
+                progressBar.textContent = Math.round(percentComplete) + '%';
+            }
+        });
+        
+        xhr.addEventListener('load', function() {
+            if (xhr.status === 200) {
+                const response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    // Show success
+                    uploadProgress.classList.add('d-none');
+                    uploadSuccess.classList.remove('d-none');
+                    document.getElementById('success-filename').textContent = response.filename;
+                    
+                    showMessage('File uploaded successfully!', 'success');
+                    
+                    // Reset file input
+                    fileInput.value = '';
+                } else {
+                    showMessage(response.error || 'Upload failed', 'danger');
+                    resetUploadState();
+                }
+            } else {
+                showMessage('Upload failed. Please try again.', 'danger');
+                resetUploadState();
+            }
+        });
+        
+        xhr.addEventListener('error', function() {
+            showMessage('Upload failed. Please check your connection and try again.', 'danger');
+            resetUploadState();
+        });
+        
+        xhr.open('POST', '/tools/file_upload/api/upload');
+        xhr.send(formData);
+    }
+    
+    function resetUploadState() {
+        uploadProgress.classList.add('d-none');
+        uploadSuccess.classList.add('d-none');
+        uploadPrompt.classList.remove('d-none');
+        progressBar.style.width = '0%';
+        progressBar.textContent = '';
+        fileInput.value = '';
+    }
+    
+    function showMessage(message, type) {
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const icon = type === 'success' ? 'check-circle' : 'alert-circle';
+        
+        uploadMessages.innerHTML = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                <i data-feather="${icon}" class="me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        
+        // Initialize feather icons for new content
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+        
+        // Auto-dismiss success messages
+        if (type === 'success') {
+            setTimeout(function() {
+                const alert = uploadMessages.querySelector('.alert');
+                if (alert) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+    }
+});
+</script>
+{% endblock %}

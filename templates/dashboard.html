@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - iColour{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-1">Welcome back, {{ current_user.username }}!</h1>
+                    <p class="text-muted mb-0">Choose from our growing collection of productivity tools</p>
+                </div>
+                <div class="text-end">
+                    <a href="{{ url_for('converter.convert') }}" class="btn btn-primary btn-sm">
+                        <i data-feather="plus" class="me-1"></i>New Conversion
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-5">
+        <div class="col-sm-6 col-lg-3 mb-3">
+            <div class="card border-0 bg-primary bg-opacity-10">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i data-feather="zap" class="text-primary"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="fw-bold text-primary">{{ user_stats.total_conversions }}</div>
+                            <div class="small text-muted">Total Conversions</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3 mb-3">
+            <div class="card border-0 bg-success bg-opacity-10">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i data-feather="file-text" class="text-success"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="fw-bold text-success">{{ user_stats.total_pages }}</div>
+                            <div class="small text-muted">Pages Processed</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+    </div>
+
+    <!-- Tools by Category -->
+    {% for category, tools in tools_by_category.items() %}
+    <div class="mb-5">
+        <div class="d-flex align-items-center mb-3">
+            <h3 class="h4 mb-0">{{ category }}</h3>
+            <span class="badge bg-secondary ms-2">{{ tools|length }}</span>
+        </div>
+
+        <div class="row">
+            {% for tool in tools %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100 border-0 shadow-sm tool-card {% if tool.status == 'coming_soon' %}coming-soon{% endif %}">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="flex-shrink-0">
+                                <div class="tool-icon">
+                                    <i data-feather="{{ tool.icon }}" class="
+                                        {% if tool.status == 'active' %}text-primary
+                                        {% else %}text-muted{% endif %}
+                                    "></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h5 class="card-title mb-1">{{ tool.name }}</h5>
+                                {% if tool.status == 'coming_soon' %}
+                                <span class="badge bg-warning text-dark mb-2">Coming Soon</span>
+                                {% elif tool.status == 'active' %}
+                                <span class="badge bg-success mb-2">Available</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <p class="card-text flex-grow-1">{{ tool.description }}</p>
+
+                        <div class="mt-auto">
+                            {% if tool.status == 'active' %}
+                            <a href="{{ url_for(tool.route) }}" class="btn btn-primary w-100">
+                                <i data-feather="play" class="me-1"></i>Launch Tool
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for(tool.route) }}" class="btn btn-outline-secondary w-100">
+                                <i data-feather="clock" class="me-1"></i>Preview
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Quick Actions -->
+    <div class="row mt-5">
+        <div class="col-md-6 mb-3">
+            <div class="card border-0 bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i data-feather="book-open" class="me-2"></i>Start Converting
+                    </h6>
+                    <p class="card-text small">Upload a PDF or image to create beautiful coloring book pages.</p>
+                    <a href="{{ url_for('converter.convert') }}" class="btn btn-outline-primary btn-sm">
+                        Convert Now
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card border-0 bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i data-feather="help-circle" class="me-2"></i>Need Help?
+                    </h6>
+                    <p class="card-text small">Check our documentation or contact support for assistance.</p>
+                    <button class="btn btn-outline-primary btn-sm" onclick="showSupport()">
+                        Get Support
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.tool-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.tool-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+.tool-card.coming-soon {
+    opacity: 0.8;
+}
+
+.tool-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: rgba(var(--bs-primary-rgb), 0.1);
+}
+
+.coming-soon .tool-icon {
+    background: rgba(108, 117, 125, 0.1);
+}
+</style>
+
+<script>
+function showSupport() {
+    alert('Support coming soon! For now, check the documentation or contact us via the main site.');
+}
+</script>
+{% endblock %}

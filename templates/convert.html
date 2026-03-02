@@ -1,0 +1,463 @@
+{% extends "base.html" %}
+
+{% block title %}Convert PDF - iColour{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i data-feather="upload" class="me-2"></i>
+                    Convert to Coloring Book
+                </h4>
+            </div>
+            <div class="card-body">
+                <!-- Upload Type Selector -->
+                <div class="mb-4">
+                    <label class="form-label">What would you like to convert?</label>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="upload_type" id="pdf_type" value="pdf" checked>
+                                <label class="form-check-label" for="pdf_type">
+                                    <i data-feather="file-text" class="me-2"></i>
+                                    <strong>PDF Document</strong><br>
+                                    <small class="text-muted">Convert an entire PDF with multiple pages</small>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="upload_type" id="image_type" value="images">
+                                <label class="form-check-label" for="image_type">
+                                    <i data-feather="image" class="me-2"></i>
+                                    <strong>Image Files</strong><br>
+                                    <small class="text-muted">Convert individual JPG, PNG, or other image files</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('converter.convert') }}" enctype="multipart/form-data" id="convertForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" name="session_id" id="sessionIdField" value=""/>
+                    
+                    <!-- PDF Upload Section -->
+                    <div class="mb-4" id="pdfUploadSection">
+                        <label for="pdf" class="form-label">Select PDF File</label>
+                        <input type="file" class="form-control" id="pdf" name="pdf_file" 
+                               accept="application/pdf">
+                        <div class="form-text">
+                            Maximum file size: 100MB • For larger files, use our compression tool
+                        </div>
+                    </div>
+                    
+                    <!-- Image Upload Section -->
+                    <div class="mb-4" id="imageUploadSection" style="display: none;">
+                        <label for="images" class="form-label">Select Image Files</label>
+                        <input type="file" class="form-control" id="images" name="image_files" 
+                               accept="image/*,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.tif,.webp,.svg,.psd" multiple>
+                        <div class="form-text">Supports JPG, PNG, GIF, BMP, TIFF, WebP, SVG, PSD. Select multiple files to convert them all at once.</div>
+                        
+                        <!-- Preview Mode Option -->
+                        <div class="mt-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="preview_mode" name="preview_mode">
+                                <label class="form-check-label" for="preview_mode">
+                                    <i data-feather="eye" class="me-2"></i>
+                                    <strong>Preview & Adjust Each Image</strong><br>
+                                    <small class="text-muted">Review each conversion and adjust line thickness, contrast, or regenerate if needed</small>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Export Format Options for Images -->
+                        <div class="mt-3">
+                            <label class="form-label">How would you like to receive your coloring pages?</label>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="export_format" id="zip_format" value="zip" checked>
+                                        <label class="form-check-label" for="zip_format">
+                                            <i data-feather="archive" class="me-2"></i>
+                                            <strong>Individual Images (ZIP)</strong><br>
+                                            <small class="text-muted">Separate PNG files in a ZIP archive</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="export_format" id="pdf_format" value="pdf">
+                                        <label class="form-check-label" for="pdf_format">
+                                            <i data-feather="file-text" class="me-2"></i>
+                                            <strong>Combined PDF</strong><br>
+                                            <small class="text-muted">All coloring pages in one PDF document</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- File Preview -->
+                    <div id="filePreview" class="alert alert-info d-none">
+                        <h6 class="alert-heading">
+                            <i data-feather="file" class="me-2"></i>
+                            File Information
+                        </h6>
+                        <div id="fileInfo"></div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                        <button type="submit" class="btn btn-primary" id="convertBtn">
+                            <i data-feather="upload" class="me-2"></i>
+                            Convert to Coloring Book
+                        </button>
+                        <a href="{{ url_for('converter.dashboard') }}" class="btn btn-outline-secondary">
+                            <i data-feather="arrow-left" class="me-2"></i>
+                            Back to Dashboard
+                        </a>
+                    </div>
+                </form>
+                
+                <!-- Processing Modal -->
+                <div class="modal fade" id="processingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalTitle">
+                                    <i data-feather="cpu" class="me-2"></i>
+                                    Processing Your Files
+                                </h5>
+                            </div>
+                            <div class="modal-body text-center">
+                                <!-- Progress Bar -->
+                                <div class="progress mb-3" style="height: 8px;">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                         role="progressbar" style="width: 0%" id="progressBar"></div>
+                                </div>
+                                
+                                <!-- Dynamic Status Messages -->
+                                <h6 id="statusTitle">Converting your files to coloring book...</h6>
+                                <p class="text-muted mb-3" id="statusMessage">Preparing for conversion...</p>
+                                
+                                <!-- Real-time Processing Steps -->
+                                <div class="alert alert-info mt-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                                        <span id="currentStep">Initializing conversion process...</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- File Progress List -->
+                                <div class="mt-3" id="fileProgressContainer" style="display: none;">
+                                    <h6 class="text-muted">Generated Files:</h6>
+                                    <div class="list-group" id="fileProgressList">
+                                        <!-- Files will be added here dynamically -->
+                                    </div>
+                                </div>
+                                
+                                <!-- Detailed Progress Info -->
+                                <div class="mt-3" id="detailedProgress" style="display: none;">
+                                    <div class="row text-center">
+                                        <div class="col-4">
+                                            <strong id="currentPageNum">0</strong><br>
+                                            <small class="text-muted">Current Page</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <strong id="totalPagesNum">0</strong><br>
+                                            <small class="text-muted">Total Pages</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <strong id="completedFilesNum">0</strong><br>
+                                            <small class="text-muted">Files Created</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Progress Information -->
+                                <div class="mt-4">
+                                    <div class="row text-center">
+                                        <div class="col-4">
+                                            <div class="border rounded p-2">
+                                                <i data-feather="file-text" class="text-primary mb-1"></i>
+                                                <small class="d-block">Extracting Pages</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="border rounded p-2">
+                                                <i data-feather="cpu" class="text-warning mb-1"></i>
+                                                <small class="d-block">AI Processing</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="border rounded p-2">
+                                                <i data-feather="package" class="text-success mb-1"></i>
+                                                <small class="d-block">Creating Package</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Information Cards -->
+        <div class="row mt-4">
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i data-feather="info" class="me-2"></i>
+                            What You'll Get
+                        </h6>
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-1">
+                                <i data-feather="check" class="text-success me-1" style="width: 16px; height: 16px;"></i>
+                                Individual PNG files for each page
+                            </li>
+                            <li class="mb-1">
+                                <i data-feather="check" class="text-success me-1" style="width: 16px; height: 16px;"></i>
+                                Complete PDF coloring book (8.5×11")
+                            </li>
+                            <li class="mb-1">
+                                <i data-feather="check" class="text-success me-1" style="width: 16px; height: 16px;"></i>
+                                ZIP file with all outputs
+                            </li>
+                            <li class="mb-0">
+                                <i data-feather="check" class="text-success me-1" style="width: 16px; height: 16px;"></i>
+                                README with instructions
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i data-feather="clock" class="me-2"></i>
+                            Processing Time
+                        </h6>
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-1">
+                                <strong>1-5 pages:</strong> 2-5 minutes
+                            </li>
+                            <li class="mb-1">
+                                <strong>6-10 pages:</strong> 5-10 minutes
+                            </li>
+                            <li class="mb-1">
+                                <strong>More than 10 pages:</strong> Not supported
+                            </li>
+                            <li class="mb-0">
+                                <small class="text-muted">Times may vary based on image complexity</small>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Best Practices -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i data-feather="lightbulb" class="me-2"></i>
+                    Best Practices for Optimal Results
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-success">✓ Good for conversion:</h6>
+                        <ul class="list-unstyled">
+                            <li>• Simple illustrations with clear outlines</li>
+                            <li>• High contrast images</li>
+                            <li>• Cartoon-style artwork</li>
+                            <li>• Line drawings with solid colors</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-warning">⚠ May not work well:</h6>
+                        <ul class="list-unstyled">
+                            <li>• Highly detailed photographs</li>
+                            <li>• Very complex patterns</li>
+                            <li>• Images with gradients or soft shadows</li>
+                            <li>• Text-heavy pages</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const filePreview = document.getElementById('filePreview');
+        const fileInfo = document.getElementById('fileInfo');
+        const convertForm = document.getElementById('convertForm');
+        const convertBtn = document.getElementById('convertBtn');
+        const processingModal = new bootstrap.Modal(document.getElementById('processingModal'));
+        
+        // File input change handlers for both PDF and image inputs
+        function setupFileHandler(inputElement, fileType) {
+            if (!inputElement) return;
+            
+            inputElement.addEventListener('change', function(e) {
+                const files = e.target.files;
+                if (files.length === 0) {
+                    filePreview.classList.add('d-none');
+                    return;
+                }
+                
+                const file = files[0];
+                
+                // Validate file type based on input type
+                if (fileType === 'pdf' && file.type !== 'application/pdf') {
+                    alert('Please select a PDF file first.');
+                    e.target.value = '';
+                    filePreview.classList.add('d-none');
+                    filePreview.classList.add('d-none');
+                    return;
+                }
+                
+                if (fileType === 'image' && !file.type.startsWith('image/')) {
+                    // Allow common image extensions that might not have proper MIME types
+                    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.tif', '.webp', '.svg', '.psd'];
+                    const fileName = file.name.toLowerCase();
+                    const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+                    
+                    if (!hasValidExtension) {
+                        alert('Please select an image file (JPG, PNG, GIF, etc.).');
+                        this.value = '';
+                        filePreview.classList.add('d-none');
+                        return;
+                    }
+                }
+                
+                // Validate file size (100MB limit)
+                const maxSize = 100 * 1024 * 1024; // 100MB in bytes
+                if (file.size > maxSize) {
+                    alert('File size must be less than 100MB.');
+                    this.value = '';
+                    filePreview.classList.add('d-none');
+                    return;
+                }
+                
+                // Show file information
+                const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+                const fileTypeLabel = fileType === 'pdf' ? 'PDF Document' : 'Image File';
+                const fileCount = files.length > 1 ? ` (and ${files.length - 1} more)` : '';
+                
+                fileInfo.innerHTML = `
+                    <strong>File:</strong> ${file.name}${fileCount}<br>
+                    <strong>Size:</strong> ${sizeInMB} MB<br>
+                    <strong>Type:</strong> ${fileTypeLabel}
+                `;
+                filePreview.classList.remove('d-none');
+            });
+        }
+        
+        // Setup handlers for both file inputs
+        setupFileHandler(document.getElementById('pdf'), 'pdf');
+        setupFileHandler(document.getElementById('images'), 'image');
+        
+        // Upload type switching
+        const pdfTypeRadio = document.getElementById('pdf_type');
+        const imageTypeRadio = document.getElementById('image_type');
+        const pdfSection = document.getElementById('pdfUploadSection');
+        const imageSection = document.getElementById('imageUploadSection');
+        
+        function toggleUploadType() {
+            if (pdfTypeRadio.checked) {
+                pdfSection.style.display = 'block';
+                imageSection.style.display = 'none';
+                document.getElementById('modalTitle').innerHTML = '<i data-feather="cpu" class="me-2"></i>Processing Your PDF';
+            } else {
+                pdfSection.style.display = 'none';
+                imageSection.style.display = 'block';
+                document.getElementById('modalTitle').innerHTML = '<i data-feather="cpu" class="me-2"></i>Processing Your Images';
+            }
+            feather.replace();
+        }
+        
+        pdfTypeRadio.addEventListener('change', toggleUploadType);
+        imageTypeRadio.addEventListener('change', toggleUploadType);
+        
+        // Initialize display
+        toggleUploadType();
+        
+        // Emergency stop mechanism - Press ESC to cancel any operation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' || e.keyCode === 27) {
+                console.log('EMERGENCY STOP: User pressed Escape');
+                
+                // Stop any ongoing form submission
+                if (window.uploadInProgress) {
+                    window.uploadInProgress = false;
+                    console.log('Upload process stopped by user');
+                }
+                
+                // Hide processing modal
+                if (processingModal) {
+                    processingModal.hide();
+                }
+                
+                // Re-enable form
+                convertBtn.disabled = false;
+                
+                // Stop page navigation if needed
+                window.stop();
+                
+                // Show user notification
+                alert('Operation cancelled by pressing Escape key');
+                
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        });
+
+        // Form submission handler with escape protection
+        convertForm.addEventListener('submit', function(e) {
+            // Set upload flag
+            window.uploadInProgress = true;
+            
+            // Show processing modal
+            processingModal.show();
+            convertBtn.disabled = true;
+            
+            // Update modal based on selection
+            const isImageMode = imageTypeRadio.checked;
+            const title = isImageMode ? 'Processing Your Images' : 'Processing Your PDF';
+            const message = isImageMode ? 'Converting images to coloring pages...' : 'Analyzing PDF and preparing for conversion...';
+            
+            document.getElementById('modalTitle').innerHTML = `<i data-feather="cpu" class="me-2"></i>${title}`;
+            document.getElementById('statusTitle').innerHTML = `${message}<br><small class="text-muted">Press ESC to cancel</small>`;
+            
+            feather.replace();
+            
+            // Add timeout protection
+            setTimeout(function() {
+                if (window.uploadInProgress) {
+                    console.log('Upload timeout - auto-cancelling');
+                    window.uploadInProgress = false;
+                    processingModal.hide();
+                    convertBtn.disabled = false;
+                    alert('Upload timed out. Please try again or use a smaller file.');
+                }
+            }, 30000); // 30 second timeout
+            
+            return true; // Let form submit
+        });
+    });
+</script>
+{% endblock %}
